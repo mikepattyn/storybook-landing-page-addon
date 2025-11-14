@@ -1,35 +1,144 @@
-<!-- README START -->
+# Storybook Landing Page Addon
 
-# Storybook Addon Kit ([demo](https://main--601ada52c3d4040021afdc30.chromatic.com))
+A Storybook addon that allows you to replace the default welcome page with your own Angular component. Perfect for creating custom landing pages that match your design system and provide a better onboarding experience.
 
-Simplify the creation of Storybook addons
+## Installation
 
-- 📝 Live-editing in development
-- ⚛️ React/JSX support
-- 📦 Transpiling and bundling with [tsup](https://tsup.egoist.dev/)
-- 🏷 Plugin metadata
-- 🚢 Release management with [Auto](https://github.com/intuit/auto)
-- 🧺 Boilerplate and sample code
-- 🛄 ESM support
-- 🛂 TypeScript by default with option to eject to JS
+First, install the package.
 
-### Migrating to a later Storybook version
+```sh
+npm install --save-dev storybook-landing-page-addon
+```
 
-If you have an existing addon that you want to migrate to support the latest version of Storyboook, you can check out the [addon migration guide](https://storybook.js.org/docs/addons/addon-migration-guide).
+Then, register it as an addon in `.storybook/main.ts`.
 
-## Getting Started
+```ts
+import type { StorybookConfig } from '@storybook/angular';
 
-Click the **Use this template** button to get started.
+const config: StorybookConfig = {
+  // ...rest of config
+  addons: [
+    '@storybook/addon-docs',
+    {
+      name: 'storybook-landing-page-addon',
+      options: {
+        componentPath: '../src/app/components/landing-page/landing-page.component',
+        storyTitle: 'Welcome',
+        storyId: 'Default',
+      },
+    },
+  ],
+};
 
-![](https://user-images.githubusercontent.com/321738/125058439-8d9ef880-e0aa-11eb-9211-e6d7be812959.gif)
+export default config;
+```
 
-Clone your repository and install dependencies.
+## Usage
+
+### Basic Configuration
+
+The addon requires a `componentPath` option that points to your Angular component. The path should be relative to your Storybook config directory (typically `.storybook`).
+
+```ts
+{
+  name: 'storybook-landing-page-addon',
+  options: {
+    componentPath: '../src/app/components/landing-page/landing-page.component',
+  },
+}
+```
+
+### Advanced Configuration
+
+You can customize the story title and ID:
+
+```ts
+{
+  name: 'storybook-landing-page-addon',
+  options: {
+    componentPath: '../src/app/components/landing-page/landing-page.component',
+    storyTitle: 'Welcome to My Design System',
+    storyId: 'LandingPage',
+  },
+}
+```
+
+### Component Requirements
+
+Your Angular component should be a standalone component (or module-based component) that can be rendered in Storybook. The component will be automatically wrapped in a story with `layout: 'fullscreen'` to provide the best landing page experience.
+
+Example component:
+
+```ts
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+
+@Component({
+  selector: 'app-landing-page',
+  standalone: true,
+  imports: [CommonModule],
+  templateUrl: './landing-page.component.html',
+  styleUrls: ['./landing-page.component.css'],
+})
+export class LandingPageComponent {
+  // Your component logic
+}
+```
+
+## How It Works
+
+1. The addon's preset generates a story file from your component path
+2. The generated story is added to the beginning of your stories array
+3. The manager automatically navigates to the landing page when Storybook loads with no story selected
+4. This replaces the default Storybook welcome page with your custom component
+
+## Options
+
+### `componentPath` (required)
+
+Type: `string`
+
+Path to your Angular component file, relative to the Storybook config directory. You can omit the `.component` extension.
+
+Example: `'../src/app/components/landing-page/landing-page.component'`
+
+### `storyTitle` (optional)
+
+Type: `string`
+
+Default: `'Welcome'`
+
+The title for the landing page story in Storybook's sidebar.
+
+### `storyId` (optional)
+
+Type: `string`
+
+Default: `'Default'`
+
+The ID for the story export. This is used internally by Storybook.
+
+## Generated Files
+
+The addon generates a story file in `.storybook/.generated/landing-page.stories.ts`. This file is automatically created and should be added to your `.gitignore`:
+
+```
+.storybook/.generated/
+```
+
+## Development
+
+To develop this addon locally:
 
 ```sh
 npm install
+npm run build
+npm run storybook
 ```
 
-<!-- README END -->
+## License
+
+MIT
 
 ### Development scripts
 
