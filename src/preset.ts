@@ -71,7 +71,7 @@ export async function stories(entry: string[] = [], options: any) {
   let addonOptions: LandingPageAddonOptions | undefined;
 
   // Try to get options from the preset options
-  if (options?.presets) {
+  if (options?.presets && Array.isArray(options.presets)) {
     for (const preset of options.presets) {
       if (preset.name === 'storybook-landing-page-addon' ||
           (typeof preset === 'object' && preset.name === 'storybook-landing-page-addon')) {
