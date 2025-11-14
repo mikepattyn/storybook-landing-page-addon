@@ -38,7 +38,15 @@ async function generateLandingPageStory(
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join('') + 'Component';
 
+  // Convert storyTitle to a valid JavaScript identifier for the export name
+  // This prevents creating a dropdown/parent - the story name matches the title
+  const storyExportName = storyTitle
+    .replace(/[^a-zA-Z0-9]/g, '') // Remove non-alphanumeric characters
+    .replace(/^[0-9]/, '_$&') // Can't start with number
+    || 'Welcome'; // Fallback
+
   // Generate the story file content
+  // Use the storyTitle as both the title and story name to avoid hierarchy/dropdown
   const storyContent = `import type { Meta, StoryObj } from '@storybook/angular';
 import { ${componentClassName} } from '${importPath}';
 
@@ -53,7 +61,9 @@ const meta: Meta<${componentClassName}> = {
 export default meta;
 type Story = StoryObj<${componentClassName}>;
 
-export const ${storyId}: Story = {};
+// Export with a name derived from title to avoid creating a dropdown/parent
+// This makes "Welcome" directly clickable without children
+export const ${storyExportName}: Story = {};
 `;
 
   await writeFile(storyFilePath, storyContent, 'utf-8');
