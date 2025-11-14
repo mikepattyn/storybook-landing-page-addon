@@ -1,9 +1,13 @@
 {
-  "name": "storybook-addon-kit",
+  "name": "storybook-landing-page-addon",
   "version": "0.0.0",
-  "description": "everything you need to build a Storybook addon",
+  "description": "A Storybook addon that allows you to replace the default welcome page with your own Angular component",
   "keywords": [
-    "storybook-addon"
+    "storybook-addon",
+    "storybook",
+    "landing-page",
+    "angular",
+    "welcome-page"
   ],
   "repository": {
     "type": "git",
@@ -85,8 +89,7 @@
   },
   "bundler": {
     "managerEntries": [
-      "src/manager.tsx",
-      "src/manager-helpers.tsx"
+      "src/manager.tsx"
     ],
     "previewEntries": [
       "src/preview.ts",
@@ -97,9 +100,9 @@
     ]
   },
   "storybook": {
-    "displayName": "Addon Kit",
+    "displayName": "Landing Page",
     "supportedFrameworks": [
-      "supported-frameworks"
+      "angular"
     ],
     "icon": "https://user-images.githubusercontent.com/321738/63501763-88dbf600-c4cc-11e9-96cd-94adadc2fd72.png"
   },
