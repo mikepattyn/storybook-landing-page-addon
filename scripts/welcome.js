@@ -96,6 +96,28 @@ const magenta = (message) => `\u001b[35m${message}\u001b[39m`;
 const blue = (message) => `\u001b[34m${message}\u001b[39m`;
 
 const main = async () => {
+  const packageJson = resolve(__dirname, `../package.json`);
+  let packageJsonContents = await readFile(packageJson, 'utf-8');
+  const packageJsonData = JSON.parse(packageJsonContents);
+
+  // Check if package.json already has non-template values
+  const isAlreadyConfigured =
+    packageJsonData.author !== REPLACE_TEMPLATES.packageAuthor &&
+    packageJsonData.repository?.url !== REPLACE_TEMPLATES.repoUrl;
+
+  if (isAlreadyConfigured) {
+    console.log('✅ Package.json already configured. Skipping setup.\n');
+    // Remove postinstall script if it still exists
+    if (packageJsonContents.includes('"postinstall"')) {
+      packageJsonContents = packageJsonContents.replace(
+        /\s*"postinstall".*node.*scripts\/welcome.js.*",/,
+        '',
+      );
+      await writeFile(packageJson, packageJsonContents);
+    }
+    return;
+  }
+
   console.log(
     bold(
       magenta(
@@ -129,10 +151,8 @@ const main = async () => {
 
   const authorField = authorName + (authorEmail ? ` <${authorEmail}>` : '');
 
-  const packageJson = resolve(__dirname, `../package.json`);
-
   console.log(`\n👷 Updating package.json...`);
-  let packageJsonContents = await readFile(packageJson, 'utf-8');
+  packageJsonContents = await readFile(packageJson, 'utf-8');
 
   packageJsonContents = packageJsonContents
     .replace(REPLACE_TEMPLATES.packageName, packageName)
