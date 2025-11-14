@@ -21,16 +21,18 @@ async function generateLandingPageStory(
   const absoluteComponentPath = resolve(configDir, componentPath);
 
   // Calculate relative path from generated story file to component
-  // Remove .component.ts or .ts extension for import
-  const componentPathWithoutExt = absoluteComponentPath
-    .replace(/\.component\.ts$/, '')
-    .replace(/\.ts$/, '');
+  // Remove only .ts extension for import (keep .component as it's part of the filename)
+  const componentPathWithoutExt = absoluteComponentPath.replace(/\.ts$/, '');
   const importPath = relative(dirname(storyFilePath), componentPathWithoutExt).replace(/\\/g, '/');
 
   // Extract component class name from path (last segment)
   const pathSegments = componentPath.split('/');
   const fileName = pathSegments[pathSegments.length - 1] || 'landing-page.component';
-  const componentName = fileName.replace(/\.component\.ts$/, '').replace(/\.ts$/, '');
+  // Remove .component.ts, .component, or .ts extensions
+  const componentName = fileName
+    .replace(/\.component\.ts$/, '')
+    .replace(/\.component$/, '')
+    .replace(/\.ts$/, '');
   const componentClassName = componentName
     .split('-')
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
@@ -46,7 +48,6 @@ const meta: Meta<${componentClassName}> = {
   parameters: {
     layout: 'fullscreen',
   },
-  tags: ['autodocs'],
 };
 
 export default meta;
@@ -66,17 +67,47 @@ export const ${storyId}: Story = {};
  * This function is called by Storybook to modify the stories array
  */
 export async function stories(entry: string[] = [], options: any) {
-  // In Storybook, addon options are passed through options.presets
+  // In Storybook, addon options can be passed through different paths
   // We need to find our addon's options from the addons array
   let addonOptions: LandingPageAddonOptions | undefined;
 
-  // Try to get options from the preset options
-  if (options?.presets && Array.isArray(options.presets)) {
-    for (const preset of options.presets) {
-      if (preset.name === 'storybook-landing-page-addon' ||
-          (typeof preset === 'object' && preset.name === 'storybook-landing-page-addon')) {
-        addonOptions = preset.options;
+  // First, check if options are passed directly on the options object
+  // (This is how Storybook passes preset-specific options)
+  if (options?.componentPath) {
+    addonOptions = {
+      componentPath: options.componentPath,
+      storyTitle: options.storyTitle,
+      storyId: options.storyId,
+    };
+  }
+
+  // Try to get options from the addons array (most common)
+  if (!addonOptions && options?.addons && Array.isArray(options.addons)) {
+    for (const addon of options.addons) {
+      if (typeof addon === 'object' && addon.name === 'storybook-landing-page-addon') {
+        addonOptions = addon.options;
         break;
+      }
+    }
+  }
+
+  // Try to get options from the preset options (handle both array and object)
+  if (!addonOptions && options?.presets) {
+    if (Array.isArray(options.presets)) {
+      for (const preset of options.presets) {
+        if (preset.name === 'storybook-landing-page-addon' ||
+            (typeof preset === 'object' && preset.name === 'storybook-landing-page-addon')) {
+          addonOptions = preset.options;
+          break;
+        }
+      }
+    } else if (typeof options.presets === 'object') {
+      // Handle presets as an object (Map-like structure)
+      for (const [key, preset] of Object.entries(options.presets)) {
+        if (preset && typeof preset === 'object' && (preset as any).name === 'storybook-landing-page-addon') {
+          addonOptions = (preset as any).options;
+          break;
+        }
       }
     }
   }
