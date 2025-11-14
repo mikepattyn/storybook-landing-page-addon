@@ -2,6 +2,18 @@ import { writeFile, mkdir } from 'fs/promises';
 import { resolve, join, relative, dirname } from 'path';
 import type { LandingPageAddonOptions } from './types';
 
+interface PresetOptions {
+  componentPath?: string;
+  storyTitle?: string;
+  storyId?: string;
+  configDir?: string;
+  addons?: Array<{ name?: string; options?: LandingPageAddonOptions }>;
+  presets?:
+    | Array<{ name?: string; options?: LandingPageAddonOptions }>
+    | Record<string, { name?: string; options?: LandingPageAddonOptions }>;
+  options?: LandingPageAddonOptions;
+}
+
 /**
  * Generate a landing page story file from the user's Angular component
  */
@@ -9,7 +21,7 @@ async function generateLandingPageStory(
   componentPath: string,
   storyTitle: string,
   storyId: string,
-  configDir: string
+  configDir: string,
 ): Promise<string> {
   // Generate story file in .storybook/.generated directory
   const generatedDir = join(configDir, '.generated');
@@ -33,17 +45,19 @@ async function generateLandingPageStory(
     .replace(/\.component\.ts$/, '')
     .replace(/\.component$/, '')
     .replace(/\.ts$/, '');
-  const componentClassName = componentName
-    .split('-')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join('') + 'Component';
+  const componentClassName =
+    componentName
+      .split('-')
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join('') + 'Component';
 
   // Convert storyTitle to a valid JavaScript identifier for the export name
   // This prevents creating a dropdown/parent - the story name matches the title
-  const storyExportName = storyTitle
-    .replace(/[^a-zA-Z0-9]/g, '') // Remove non-alphanumeric characters
-    .replace(/^[0-9]/, '_$&') // Can't start with number
-    || 'Welcome'; // Fallback
+  const storyExportName =
+    storyTitle
+      .replace(/[^a-zA-Z0-9]/g, '') // Remove non-alphanumeric characters
+      .replace(/^[0-9]/, '_$&') || // Can't start with number
+    'Welcome'; // Fallback
 
   // Generate the story file content
   // Use the storyTitle as both the title and story name to avoid hierarchy/dropdown
@@ -76,7 +90,7 @@ export const ${storyExportName}: Story = {};
  * Storybook preset to add landing page story
  * This function is called by Storybook to modify the stories array
  */
-export async function stories(entry: string[] = [], options: any) {
+export async function stories(entry: string[] = [], options: PresetOptions = {}) {
   // In Storybook, addon options can be passed through different paths
   // We need to find our addon's options from the addons array
   let addonOptions: LandingPageAddonOptions | undefined;
@@ -105,17 +119,19 @@ export async function stories(entry: string[] = [], options: any) {
   if (!addonOptions && options?.presets) {
     if (Array.isArray(options.presets)) {
       for (const preset of options.presets) {
-        if (preset.name === 'storybook-landing-page-addon' ||
-            (typeof preset === 'object' && preset.name === 'storybook-landing-page-addon')) {
+        if (
+          preset.name === 'storybook-landing-page-addon' ||
+          (typeof preset === 'object' && preset.name === 'storybook-landing-page-addon')
+        ) {
           addonOptions = preset.options;
           break;
         }
       }
     } else if (typeof options.presets === 'object') {
       // Handle presets as an object (Map-like structure)
-      for (const [key, preset] of Object.entries(options.presets)) {
-        if (preset && typeof preset === 'object' && (preset as any).name === 'storybook-landing-page-addon') {
-          addonOptions = (preset as any).options;
+      for (const preset of Object.values(options.presets)) {
+        if (preset && typeof preset === 'object' && preset.name === 'storybook-landing-page-addon') {
+          addonOptions = preset.options;
           break;
         }
       }
@@ -137,12 +153,7 @@ export async function stories(entry: string[] = [], options: any) {
   const storyId = addonOptions.storyId || 'Default';
 
   // Generate the landing page story
-  const landingPageStory = await generateLandingPageStory(
-    addonOptions.componentPath,
-    storyTitle,
-    storyId,
-    configDir
-  );
+  const landingPageStory = await generateLandingPageStory(addonOptions.componentPath, storyTitle, storyId, configDir);
 
   // Add the generated story to the beginning of the stories array
   return [landingPageStory, ...entry];

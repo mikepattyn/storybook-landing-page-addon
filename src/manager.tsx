@@ -1,4 +1,5 @@
 import { addons } from 'storybook/manager-api';
+import type { API_HashEntry } from 'storybook/internal/types';
 import { ADDON_ID } from './constants';
 
 // Register the addon
@@ -45,15 +46,18 @@ addons.register(ADDON_ID, (api) => {
         const parent: HTMLElement | null = current.parentElement;
         if (parent) {
           // Check if this parent only contains the default button or is a list item
-          const siblings = Array.from(parent.children).filter(child => child !== current);
-          const hasOnlyDefault = siblings.length === 0 ||
-            (siblings.length === 1 && (siblings[0] as HTMLElement).id === 'welcome--default');
+          const siblings = Array.from(parent.children).filter((child) => child !== current);
+          const hasOnlyDefault =
+            siblings.length === 0 || (siblings.length === 1 && (siblings[0] as HTMLElement).id === 'welcome--default');
 
           // Remove the element itself
           current.remove();
 
           // If parent is a list item or container that only has the default, remove it too
-          if (hasOnlyDefault && (parent.tagName === 'LI' || parent.tagName === 'DIV' || parent.classList.contains('css-'))) {
+          if (
+            hasOnlyDefault &&
+            (parent.tagName === 'LI' || parent.tagName === 'DIV' || parent.classList.contains('css-'))
+          ) {
             current = parent;
             continue;
           }
@@ -64,7 +68,7 @@ addons.register(ADDON_ID, (api) => {
 
     // Also try by href attribute - remove completely with parent
     const buttonsByHref = document.querySelectorAll('button[href*="welcome--default"]');
-    buttonsByHref.forEach(el => {
+    buttonsByHref.forEach((el) => {
       // Remove the button
       el.remove();
       // Also try to remove parent if it's a list item
@@ -80,13 +84,15 @@ addons.register(ADDON_ID, (api) => {
 
     // Also try to find by text content and remove with parent
     const allButtons = document.querySelectorAll('button, a');
-    allButtons.forEach(el => {
+    allButtons.forEach((el) => {
       const text = el.textContent?.trim().toLowerCase();
       const href = (el as HTMLElement).getAttribute('href') || '';
       const id = (el as HTMLElement).id || '';
-      if ((text === 'default' && el.closest('[data-itemid*="welcome"]')) ||
-          href.includes('welcome--default') ||
-          id.includes('welcome--default')) {
+      if (
+        (text === 'default' && el.closest('[data-itemid*="welcome"]')) ||
+        href.includes('welcome--default') ||
+        id.includes('welcome--default')
+      ) {
         el.remove();
         // Also remove parent if it's a container
         const parent = el.parentElement;
@@ -104,14 +110,16 @@ addons.register(ADDON_ID, (api) => {
     if (welcomeContainer) {
       // Find all children and check for empty or default-related items
       const allChildren = welcomeContainer.querySelectorAll('*');
-      allChildren.forEach(child => {
+      allChildren.forEach((child) => {
         const childId = (child as HTMLElement).id || '';
         const childHref = (child as HTMLElement).getAttribute('href') || '';
         const childText = child.textContent?.trim().toLowerCase();
 
-        if (childId.includes('welcome--default') ||
-            childHref.includes('welcome--default') ||
-            (childText === 'default' && child.closest('[data-itemid*="welcome"]'))) {
+        if (
+          childId.includes('welcome--default') ||
+          childHref.includes('welcome--default') ||
+          (childText === 'default' && child.closest('[data-itemid*="welcome"]'))
+        ) {
           child.remove();
           // Also remove parent if it becomes empty
           const parent = child.parentElement;
@@ -124,9 +132,8 @@ addons.register(ADDON_ID, (api) => {
 
     // Also hide any empty list items or containers that might be placeholders
     const emptyItems = document.querySelectorAll('li:empty, div:empty, [class*="css-"]:empty');
-    emptyItems.forEach(item => {
-      if (item.closest('[data-itemid*="welcome"]') &&
-          !item.closest('[data-itemid="welcome"]')) {
+    emptyItems.forEach((item) => {
+      if (item.closest('[data-itemid*="welcome"]') && !item.closest('[data-itemid="welcome"]')) {
         item.remove();
       }
     });
@@ -137,7 +144,7 @@ addons.register(ADDON_ID, (api) => {
 
   // Run at multiple intervals to catch late renders
   const intervals = [50, 100, 200, 500, 1000, 2000, 3000];
-  intervals.forEach(delay => {
+  intervals.forEach((delay) => {
     setTimeout(hideDefaultStory, delay);
   });
 
@@ -145,9 +152,10 @@ addons.register(ADDON_ID, (api) => {
   const observer = new MutationObserver((mutations) => {
     hideDefaultStory();
     // Also check all added nodes
-    mutations.forEach(mutation => {
-      mutation.addedNodes.forEach(node => {
-        if (node.nodeType === 1) { // Element node
+    mutations.forEach((mutation) => {
+      mutation.addedNodes.forEach((node) => {
+        if (node.nodeType === 1) {
+          // Element node
           const element = node as HTMLElement;
           if (element.id === 'welcome--default' || element.querySelector?.('#welcome--default')) {
             hideDefaultStory();
@@ -162,7 +170,7 @@ addons.register(ADDON_ID, (api) => {
     childList: true,
     subtree: true,
     attributes: true,
-    attributeFilter: ['id', 'href']
+    attributeFilter: ['id', 'href'],
   });
 
   // Also observe the sidebar container specifically if it exists
@@ -177,7 +185,8 @@ addons.register(ADDON_ID, (api) => {
   const continuousCheck = setInterval(() => {
     hideDefaultStory();
     checkCount++;
-    if (checkCount > 50) { // Stop after 5 seconds (50 * 100ms)
+    if (checkCount > 50) {
+      // Stop after 5 seconds (50 * 100ms)
       clearInterval(continuousCheck);
     }
   }, 100);
@@ -197,10 +206,10 @@ addons.register(ADDON_ID, (api) => {
         if (typeof api.getStories === 'function') {
           const stories = api.getStories();
           if (stories) {
-            const welcomeStory = Object.values(stories).find(
-              (story: any) => story.title === 'Welcome' && story.name === 'Default'
-            ) as any;
-            if (welcomeStory && welcomeStory.id) {
+            const welcomeStory = (Object.values(stories) as API_HashEntry[]).find(
+              (story) => 'title' in story && story.title === 'Welcome' && 'name' in story && story.name === 'Default',
+            );
+            if (welcomeStory && 'id' in welcomeStory && welcomeStory.id) {
               welcomeStoryId = welcomeStory.id;
             }
           }
@@ -210,10 +219,10 @@ addons.register(ADDON_ID, (api) => {
         if (!welcomeStoryId && typeof api.getStoryIndex === 'function') {
           const storyIndex = api.getStoryIndex();
           if (storyIndex && storyIndex.entries) {
-            const welcomeStory = Object.values(storyIndex.entries).find(
-              (story: any) => story.title === 'Welcome' && story.name === 'Default'
-            ) as any;
-            if (welcomeStory && welcomeStory.id) {
+            const welcomeStory = (Object.values(storyIndex.entries) as API_HashEntry[]).find(
+              (story) => 'title' in story && story.title === 'Welcome' && 'name' in story && story.name === 'Default',
+            );
+            if (welcomeStory && 'id' in welcomeStory && welcomeStory.id) {
               welcomeStoryId = welcomeStory.id;
             }
           }
@@ -249,13 +258,13 @@ addons.register(ADDON_ID, (api) => {
 
     // Listen for URL changes (when Welcome parent is clicked)
     const originalPushState = history.pushState;
-    history.pushState = function(...args) {
+    history.pushState = function (...args) {
       originalPushState.apply(history, args);
       setTimeout(checkAndNavigate, 50);
     };
 
     const originalReplaceState = history.replaceState;
-    history.replaceState = function(...args) {
+    history.replaceState = function (...args) {
       originalReplaceState.apply(history, args);
       setTimeout(checkAndNavigate, 50);
     };
